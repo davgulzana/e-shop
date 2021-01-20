@@ -47,6 +47,9 @@ class Product(models.Model):
             self.uuid = str(uuid.uuid4())
         super().save(*args, **kwargs)
 
+    class Meta:
+        ordering = ('price',)
+
 
 class ProductImage(models.Model):
     image = models.ImageField(upload_to='products')

@@ -1,14 +1,16 @@
 from django.contrib.auth import get_user_model
-from rest_framework import status, permissions
+from rest_framework import status, permissions, mixins, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import RegisterSerializer, LoginSerializer
-from .utils import send_activation_email
+from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer
+from .utils import send_activation_email, IsOwnerAccount
 
+
+User = get_user_model()
 
 class RegisterView(APIView):
     def post(self, request):
@@ -22,7 +24,7 @@ class RegisterView(APIView):
 
 class ActivationView(APIView):
     def get(self, request, activation_code):
-        user = get_object_or_404(get_user_model(), activation_code=activation_code)
+        user = get_object_or_404(User, activation_code=activation_code)
         user.is_active = True
         user.activation_code = ''
         user.save()
@@ -44,3 +46,15 @@ class LogoutView(APIView):
         return Response(
             'Вы успешно вышли из своего аккаунта.'
         )
+
+
+class ProfileViewSet(mixins.RetrieveModelMixin,
+                     mixins.UpdateModelMixin,
+                     viewsets.GenericViewSet):
+    """User profile viewset for retrieve and update"""
+    queryset = User.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerAccount]
+
+    # def get_object(self):
+    #     return self.request.user
